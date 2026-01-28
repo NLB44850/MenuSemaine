@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Collection des menus - lecture publique, écriture authentifiée
+    match /menus/{menuId} {
+      allow read: if true;
+      allow create, update, delete: if request.auth != null;
+    }
+
+    // Collection des abonnés - SÉCURISÉE
+    match /abonnes/{abonneId} {
+      // Lecture uniquement par les admins authentifiés
+      allow read: if request.auth != null;
+      
+      // Création publique mais avec validation stricte
+      allow create: if request.resource.data.keys().hasAll(['email', 'etablissementId', 'etablissementNom', 'subscribedAt', 'unsubscribeToken', 'active'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+                    && request.resource.data.etablissementId is string
+                    && request.resource.data.etablissementNom is string
+                    && request.resource.data.active == true
+                    && request.resource.data.unsubscribeToken is string
+                    && request.resource.data.unsubscribeToken.size() > 10;
+      
+      // Modification/suppression uniquement par admins
+      allow update, delete: if request.auth != null;
+    }
+
+    // Collection mail (logs des emails envoyés)
+    match /mail/{mailId} {
+      allow read: if request.auth != null;
+      allow write: if false; // Uniquement Cloud Functions
+    }
+  }
+}
