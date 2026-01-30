@@ -48,7 +48,7 @@ const Header = ({ title, showBackButton = false, backLink = '/', actions }) => {
                 </svg>
               </div>
               <span className="text-xl font-bold text-gray-900">
-                {title || 'MenuSemaine'}
+                {title || 'Easy Cantine'}
               </span>
             </Link>
           </div>

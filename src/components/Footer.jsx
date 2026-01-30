@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           {/* Copyright */}
           <div className="text-sm text-gray-600">
-            © {currentYear} MenuSemaine. Tous droits réservés.
+            © {currentYear} EasyCantine. Tous droits réservés.
           </div>
  
           {/* Liens utiles */}

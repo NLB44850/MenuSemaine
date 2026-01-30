@@ -77,7 +77,7 @@ const MenuPublic = () => {
  
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header title="MenuSemaine" showBackButton backLink="/" />
+      <Header title="Easy Cantine" showBackButton backLink="/" />
  
       <main className="flex-grow py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">

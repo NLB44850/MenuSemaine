@@ -3,7 +3,7 @@ import Header from '../components/Header'
 import Footer from '../components/Footer'
  
 /**
- * Page d'accueil - Présentation du service MenuSemaine
+ * Page d'accueil - Présentation du service Easy Cantine
  */
 const HomePage = () => {
   return (
@@ -16,7 +16,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center animate-fade-in">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                MenuSemaine
+                Easy Cantine
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-primary-100">
                 La solution simple pour partager les menus de cantine scolaire
@@ -228,7 +228,7 @@ const HomePage = () => {
               Prêt à simplifier la communication des menus ?
             </h2>
             <p className="text-lg text-gray-600 mb-8">
-              MenuSemaine est conçu spécialement pour les écoles et crèches de Loire-Atlantique.
+              Easy Cantine est conçu spécialement pour les écoles et crèches de Loire-Atlantique.
               Simple, rapide et efficace.
             </p>
             <Link to="/admin" className="btn-primary">

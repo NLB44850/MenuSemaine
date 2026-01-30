@@ -123,7 +123,7 @@ exports.envoyerEmailNouveauMenu = onDocumentCreated(
                     <!-- En-tête -->
                     <tr>
                       <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px 30px; text-align: center;">
-                        <h1 style="color: white; margin: 0; font-size: 28px;">MenuSemaine</h1>
+                        <h1 style="color: white; margin: 0; font-size: 28px;">Easy Cantine</h1>
                         <p style="color: #dbeafe; margin: 10px 0 0 0; font-size: 14px;">Menu de cantine scolaire</p>
                       </td>
                     </tr>
