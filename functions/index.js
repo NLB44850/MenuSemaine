@@ -38,14 +38,15 @@ exports.envoyerEmailNouveauMenu = onDocumentCreated(
 
     // Configuration du transporteur SMTP avec le secret
     const transporter = nodemailer.createTransport({
-      host: 'smtp-mail.outlook.com', // ← Changé
-      port: 587,
-      secure: false,
-      auth: {
-      user: 'easycantine@outlook.fr', // ← Changé
-      pass: gmailAppPassword.value(), // ← Même secret Firebase
-    },
-  })
+  host: 'smtp.gmail.com', // ← Gmail
+  port: 587,
+  secure: false,
+  auth: {
+    user: 'nleberre5@gmail.com', // ← Votre Gmail
+    pass: gmailAppPassword.value(),
+  },
+})
+
 
 
     try {
@@ -165,7 +166,7 @@ exports.envoyerEmailNouveauMenu = onDocumentCreated(
 
         // Envoyer l'email directement avec nodemailer
         const emailPromise = transporter.sendMail({
-        from: '"EasyCantine" <easycantine@outlook.fr>', // ← Changé
+        from: '"EasyCantine" <nleberre5@gmail.com>', // ← EasyCantine avec Gmail
           to: abonne.email,
           subject: `📅 Nouveau menu : ${semaine}`,
           html: htmlContent,
