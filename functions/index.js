@@ -218,3 +218,125 @@ function formatWeekRange(dateDebut, dateFin) {
 function capitalize(str) {
   return str.charAt(0).toUpperCase() + str.slice(1)
 }
+ 
+/**
+ * Fonction Cloud déclenchée automatiquement quand un message de contact est créé
+ * Envoie un email de notification à l'administrateur
+ */
+exports.envoyerEmailContact = onDocumentCreated(
+  {
+    document: 'contact-messages/{messageId}',
+    database: '(default)',
+    region: 'europe-west1',
+    secrets: [gmailAppPassword]
+  },
+  async (event) => {
+    const snap = event.data
+    if (!snap) {
+      console.log('No data associated with the event')
+      return
+    }
+    const message = snap.data()
+ 
+    console.log(`📧 Nouveau message de contact de ${message.name} (${message.email})`)
+ 
+    try {
+      // Configuration du transporteur SMTP pour l'envoi d'emails
+      const transporter = nodemailer.createTransport({
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: {
+          user: 'nleberre5@gmail.com',
+          pass: gmailAppPassword.value(),
+        },
+      })
+ 
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html lang="fr">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Nouveau message de contact</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f3f4f6;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse;">
+            <tr>
+              <td align="center" style="padding: 20px 0;">
+                <table role="presentation" style="width: 600px; max-width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+ 
+                  <!-- En-tête -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="color: white; margin: 0; font-size: 28px;">📬 Nouveau message de contact</h1>
+                      <p style="color: #dbeafe; margin: 10px 0 0 0; font-size: 14px;">EasyCantine</p>
+                    </td>
+                  </tr>
+ 
+                  <!-- Contenu -->
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <div style="margin-bottom: 20px; padding: 15px; background: #f3f4f6; border-radius: 8px;">
+                        <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Informations de contact</h3>
+                        <p style="margin: 5px 0; color: #4b5563;">
+                          <strong>Nom :</strong> ${message.name}
+                        </p>
+                        <p style="margin: 5px 0; color: #4b5563;">
+                          <strong>Email :</strong> <a href="mailto:${message.email}" style="color: #3b82f6; text-decoration: none;">${message.email}</a>
+                        </p>
+                        <p style="margin: 5px 0; color: #4b5563;">
+                          <strong>Sujet :</strong> ${message.subject}
+                        </p>
+                      </div>
+ 
+                      <div style="margin-top: 20px;">
+                        <h3 style="color: #1e40af; margin: 0 0 10px 0; font-size: 16px;">Message</h3>
+                        <div style="padding: 15px; background: #fff; border: 1px solid #e5e7eb; border-radius: 8px;">
+                          <p style="margin: 0; color: #1f2937; line-height: 1.6; white-space: pre-wrap;">${message.message}</p>
+                        </div>
+                      </div>
+ 
+                      <div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                        <p style="margin: 0; color: #92400e; font-size: 14px;">
+                          💡 Pour répondre, envoyez un email directement à <strong>${message.email}</strong>
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+ 
+                  <!-- Pied de page -->
+                  <tr>
+                    <td style="padding: 20px 30px; background: #f3f4f6; text-align: center;">
+                      <p style="margin: 0; font-size: 12px; color: #6b7280;">
+                        Message reçu le ${new Date(message.createdAt).toLocaleString('fr-FR')}
+                      </p>
+                    </td>
+                  </tr>
+ 
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `
+ 
+      // Envoyer l'email de notification
+      await transporter.sendMail({
+        from: '"EasyCantine Contact" <nleberre5@gmail.com>',
+        to: 'nleberre5@gmail.com', // Envoyer à vous-même
+        replyTo: message.email, // Pour pouvoir répondre directement
+        subject: `📬 Nouveau contact : ${message.subject}`,
+        html: htmlContent,
+      })
+ 
+      console.log(`✅ Email de notification envoyé avec succès`)
+ 
+      return null
+    } catch (error) {
+      console.error('❌ Erreur lors de l\'envoi de l\'email:', error)
+      return null
+    }
+  }
+)
