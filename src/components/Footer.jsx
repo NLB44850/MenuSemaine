@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 /**
  * Composant Footer - Pied de page de l'application
  */
@@ -15,27 +16,27 @@ const Footer = () => {
  
           {/* Liens utiles */}
           <div className="flex space-x-6 text-sm">
-            <a
-              href="#"
+           <Link
+              to="/a-propos"
               className="text-gray-600 hover:text-primary-600 transition-colors"
             >
               À propos
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/contact"
               className="text-gray-600 hover:text-primary-600 transition-colors"
             >
               Contact
-            </a>
-            <a
-              href="#"
+            </Link>
+            <Link
+              to="/mentions-legales"
               className="text-gray-600 hover:text-primary-600 transition-colors"
             >
               Mentions légales
-            </a>
+            </Link>
+          </div>
           </div>
         </div>
-      </div>
     </footer>
   )
 }
