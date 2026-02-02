@@ -16,7 +16,7 @@ const HomePage = () => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center animate-fade-in">
               <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                Easy Cantine
+                EasyCantine
               </h1>
               <p className="text-xl md:text-2xl mb-8 text-primary-100">
                 La solution simple pour partager les menus de cantine scolaire
@@ -31,7 +31,7 @@ const HomePage = () => {
                 </Link>
                 <a
                   href="#fonctionnalites"
-                  className="btn-secondary border-white text-white hover:bg-white/10"
+                  className="btn-secondary !bg-transparent border-white !text-white hover:!bg-white/10"
                 >
                   En savoir plus
                 </a>

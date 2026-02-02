@@ -4,6 +4,7 @@ import { useAuth } from '../services/AuthContext'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import ErrorMessage from '../components/ErrorMessage'
+import ContactForm from '../components/ContactForm'
  
 /**
  * Page de connexion admin
@@ -13,6 +14,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showContactForm, setShowContactForm] = useState(false)
  
   const { signIn, currentUser } = useAuth()
   const navigate = useNavigate()
@@ -165,9 +167,12 @@ const AdminLogin = () => {
             <div className="mt-6 text-center text-sm text-gray-600">
               <p>
                 Première connexion ?{' '}
-                <a href="#" className="text-primary-600 hover:text-primary-700 font-medium">
+               <button
+                  onClick={() => setShowContactForm(true)}
+                  className="text-primary-600 hover:text-primary-700 font-medium underline"
+                >
                   Contactez-nous
-                </a>
+                </button>
               </p>
             </div>
           </div>
@@ -175,6 +180,12 @@ const AdminLogin = () => {
       </main>
  
       <Footer />
+ 
+      {/* Modal de contact */}
+      <ContactForm
+        isOpen={showContactForm}
+        onClose={() => setShowContactForm(false)}
+      />
     </div>
   )
 }

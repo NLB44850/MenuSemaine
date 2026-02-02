@@ -32,5 +32,45 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if false; // Uniquement Cloud Functions
     }
+    
+    // Collection abonnés (newsletter)
+    match /abonnes/{abonneId} {
+      // Lecture uniquement pour les utilisateurs authentifiés
+      allow read: if request.auth != null;
+ 
+      // Création publique avec validation des champs
+      allow create: if request.resource.data.keys().hasAll(['email', 'etablissementId', 'etablissementNom', 'subscribedAt', 'unsubscribeToken', 'active'])
+                    && request.resource.data.email is string
+                    && request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+                    && request.resource.data.etablissementId is string
+                    && request.resource.data.active == true;
+ 
+      // Modification/suppression uniquement pour les admins
+      allow update, delete: if request.auth != null;
+    }
+ 
+    // Collection messages de contact
+    match /contact-messages/{messageId} {
+      // Lecture uniquement pour les utilisateurs authentifiés
+      allow read: if request.auth != null;
+ 
+      // Création publique avec validation des champs
+      allow create: if request.resource.data.keys().hasAll(['name', 'email', 'subject', 'message', 'createdAt', 'status'])
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.email is string
+                    && request.resource.data.email.matches('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$')
+                    && request.resource.data.subject is string
+                    && request.resource.data.subject.size() > 0
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() > 0
+                    && request.resource.data.status == 'nouveau';
+ 
+      // Modification uniquement pour les admins (pour marquer comme lu)
+      allow update: if request.auth != null;
+ 
+      // Suppression uniquement pour les admins
+      allow delete: if request.auth != null;
+    }
   }
 }
