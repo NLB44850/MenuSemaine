@@ -1,7 +1,3 @@
-console.log('🔥 Firebase config:', {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-});
 import { initializeApp } from 'firebase/app'
 import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
