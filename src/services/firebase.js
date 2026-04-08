@@ -5,13 +5,14 @@ import { getStorage } from 'firebase/storage'
  
 // Configuration Firebase depuis les variables d'environnement
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID
-}
+  apiKey: "AIzaSyAtaiiMAgW1FiKAsQv8eqzam-8Rb1lXTEE",
+  authDomain: "menusemaine-dad56.firebaseapp.com",
+  projectId: "menusemaine-dad56",
+  storageBucket: "menusemaine-dad56.firebasestorage.app",
+  messagingSenderId: "784460574046",
+  appId: "1:784460574046:web:f82c23a11667cb1f1933cf",
+  measurementId: "G-F74KRRYR0S"
+};
  
 // Initialisation de Firebase
 const app = initializeApp(firebaseConfig)
