@@ -20,40 +20,49 @@ import ErrorMessage from '../components/ErrorMessage'
 import SuccessMessage from '../components/SuccessMessage'
 import { getWeekNumber, getMonday, getFriday, formatWeekRange } from '../utils/dateUtils'
 import { compressImage, isImageFile, isValidFileSize, formatFileSize } from '../utils/imageUtils'
- 
+
 /**
  * Dashboard Admin - Gestion des menus
  */
 const AdminDashboard = () => {
   const { currentUser, signOut } = useAuth()
- 
+
   // États du formulaire
   const [menuType, setMenuType] = useState('texte') // 'photo' ou 'texte'
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
+  
+  // Structure de menu avec champs séparés
+  const menuVide = {
+    entree: '',
+    plat: '',
+    dessert: '',
+    allergenes: ''
+  }
+  
   const [menuTexte, setMenuTexte] = useState({
-    lundi: '',
-    mardi: '',
-    mercredi: '',
-    jeudi: '',
-    vendredi: ''
+    lundi: { ...menuVide },
+    mardi: { ...menuVide },
+    mercredi: { ...menuVide },
+    jeudi: { ...menuVide },
+    vendredi: { ...menuVide }
   })
- 
+
   // États de l'interface
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
   const [historique, setHistorique] = useState([])
   const [loadingHistorique, setLoadingHistorique] = useState(true)
- 
-  // Information de l'établissement (pour simplifier le MVP, on utilise l'email comme identifiant)
+
+  // Information de l'établissement
   const etablissementId = currentUser?.email?.replace(/[@.]/g, '-') || 'unknown'
- 
+
   // Charger l'historique des menus au montage du composant
   useEffect(() => {
     chargerHistorique()
   }, [])
- 
+
   /**
    * Charger l'historique des 4 dernières semaines de menus
    */
@@ -67,13 +76,13 @@ const AdminDashboard = () => {
         orderBy('publishedAt', 'desc'),
         limit(4)
       )
- 
+
       const querySnapshot = await getDocs(q)
       const menus = []
       querySnapshot.forEach((doc) => {
         menus.push({ id: doc.id, ...doc.data() })
       })
- 
+
       setHistorique(menus)
     } catch (err) {
       console.error('Erreur lors du chargement de l\'historique:', err)
@@ -81,29 +90,29 @@ const AdminDashboard = () => {
       setLoadingHistorique(false)
     }
   }
- 
+
   /**
    * Gérer la sélection d'une photo
    */
   const handlePhotoChange = (e) => {
     const file = e.target.files[0]
     if (!file) return
- 
+
     // Validation du type de fichier
     if (!isImageFile(file)) {
       setError('Veuillez sélectionner une image (JPEG, PNG, WebP)')
       return
     }
- 
+
     // Validation de la taille
     if (!isValidFileSize(file, 5)) {
       setError('La taille de l\'image ne doit pas dépasser 5 Mo')
       return
     }
- 
+
     setPhotoFile(file)
     setError('')
- 
+
     // Créer un aperçu
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -111,17 +120,42 @@ const AdminDashboard = () => {
     }
     reader.readAsDataURL(file)
   }
- 
+
   /**
-   * Gérer les changements dans les champs de menu texte
+   * Gérer les changements dans les champs de menu
    */
-  const handleMenuTexteChange = (jour, valeur) => {
+  const handleMenuFieldChange = (jour, champ, valeur) => {
     setMenuTexte((prev) => ({
       ...prev,
-      [jour]: valeur
+      [jour]: {
+        ...prev[jour],
+        [champ]: valeur
+      }
     }))
   }
- 
+
+  /**
+   * Réinitialiser un jour
+   */
+  const resetJour = (jour) => {
+    setMenuTexte((prev) => ({
+      ...prev,
+      [jour]: { ...menuVide }
+    }))
+  }
+
+  /**
+   * Convertir la structure en texte formaté
+   */
+  const menuToText = (menuJour) => {
+    const parts = []
+    if (menuJour.entree) parts.push(`Entrée : ${menuJour.entree}`)
+    if (menuJour.plat) parts.push(`Plat : ${menuJour.plat}`)
+    if (menuJour.dessert) parts.push(`Dessert : ${menuJour.dessert}`)
+    if (menuJour.allergenes) parts.push(`Allergènes : ${menuJour.allergenes}`)
+    return parts.join('\n')
+  }
+
   /**
    * Valider le formulaire avant publication
    */
@@ -132,8 +166,10 @@ const AdminDashboard = () => {
         return false
       }
     } else {
-      // Vérifier qu'au moins un jour est rempli
-      const joursRemplis = Object.values(menuTexte).some((val) => val.trim() !== '')
+      // Vérifier qu'au moins un jour a au moins un champ rempli
+      const joursRemplis = Object.values(menuTexte).some((jour) => 
+        jour.entree || jour.plat || jour.dessert || jour.allergenes
+      )
       if (!joursRemplis) {
         setError('Veuillez remplir au moins un jour de menu')
         return false
@@ -141,7 +177,7 @@ const AdminDashboard = () => {
     }
     return true
   }
- 
+
   /**
    * Publier le menu
    */
@@ -149,16 +185,16 @@ const AdminDashboard = () => {
     e.preventDefault()
     setError('')
     setSuccess('')
- 
+
     if (!validerFormulaire()) return
- 
+
     setLoading(true)
- 
+
     try {
       const semaine = getWeekNumber()
       const dateDebut = getMonday()
       const dateFin = getFriday()
- 
+
       let menuData = {
         etablissementId,
         semaine,
@@ -168,43 +204,47 @@ const AdminDashboard = () => {
         publishedAt: new Date().toISOString(),
         publishedBy: currentUser.email
       }
- 
+
       // Upload de la photo si type photo
       if (menuType === 'photo') {
         // Compresser l'image
         const compressedImage = await compressImage(photoFile, 1200, 1200, 0.8)
- 
+
         // Upload vers Firebase Storage
         const timestamp = Date.now()
         const filename = `${timestamp}-${photoFile.name}`
         const storageRef = ref(storage, `menus/${etablissementId}/${filename}`)
- 
+
         await uploadBytes(storageRef, compressedImage)
         const photoUrl = await getDownloadURL(storageRef)
- 
+
         menuData.photoUrl = photoUrl
       } else {
-        // Ajouter le menu texte
-        menuData.menuTexte = menuTexte
+        // Convertir la structure en texte formaté pour chaque jour
+        const menuTexteFormate = {}
+        Object.keys(menuTexte).forEach((jour) => {
+          menuTexteFormate[jour] = menuToText(menuTexte[jour])
+        })
+        menuData.menuTexte = menuTexteFormate
       }
- 
+
       // Sauvegarder dans Firestore
       await addDoc(collection(db, 'menus'), menuData)
- 
+
       setSuccess('Menu publié avec succès ! Les parents peuvent maintenant le consulter.')
- 
+
       // Réinitialiser le formulaire
       setMenuType('texte')
       setPhotoFile(null)
       setPhotoPreview(null)
       setMenuTexte({
-        lundi: '',
-        mardi: '',
-        mercredi: '',
-        jeudi: '',
-        vendredi: ''
+        lundi: { ...menuVide },
+        mardi: { ...menuVide },
+        mercredi: { ...menuVide },
+        jeudi: { ...menuVide },
+        vendredi: { ...menuVide }
       })
- 
+
       // Recharger l'historique
       chargerHistorique()
     } catch (err) {
@@ -214,13 +254,13 @@ const AdminDashboard = () => {
       setLoading(false)
     }
   }
- 
+
   /**
    * Supprimer un menu de l'historique
    */
   const supprimerMenu = async (menu) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce menu ?')) return
- 
+
     try {
       // Supprimer la photo du Storage si c'est un menu photo
       if (menu.type === 'photo' && menu.photoUrl) {
@@ -231,10 +271,10 @@ const AdminDashboard = () => {
           console.error('Erreur lors de la suppression de la photo:', err)
         }
       }
- 
+
       // Supprimer de Firestore
       await deleteDoc(doc(db, 'menus', menu.id))
- 
+
       setSuccess('Menu supprimé avec succès')
       chargerHistorique()
     } catch (err) {
@@ -242,7 +282,7 @@ const AdminDashboard = () => {
       setError('Erreur lors de la suppression du menu')
     }
   }
- 
+
   /**
    * Gérer la déconnexion
    */
@@ -253,7 +293,7 @@ const AdminDashboard = () => {
       setError('Erreur lors de la déconnexion')
     }
   }
- 
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header
@@ -280,13 +320,13 @@ const AdminDashboard = () => {
           </button>
         }
       />
- 
+
       <main className="flex-grow py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Messages */}
           {error && <ErrorMessage message={error} onClose={() => setError('')} />}
           {success && <SuccessMessage message={success} onClose={() => setSuccess('')} />}
- 
+
           <div className="grid lg:grid-cols-3 gap-8 mt-6">
             {/* Formulaire de publication */}
             <div className="lg:col-span-2">
@@ -294,7 +334,7 @@ const AdminDashboard = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">
                   Publier le menu de la semaine
                 </h2>
- 
+
                 <form onSubmit={publierMenu} className="space-y-6">
                   {/* Sélection du type de menu */}
                   <div>
@@ -326,7 +366,7 @@ const AdminDashboard = () => {
                       </button>
                     </div>
                   </div>
- 
+
                   {/* Upload de photo */}
                   {menuType === 'photo' && (
                     <div>
@@ -394,35 +434,92 @@ const AdminDashboard = () => {
                       </div>
                     </div>
                   )}
- 
-                  {/* Saisie texte jour par jour */}
+
+                  {/* Saisie texte jour par jour avec champs structurés */}
                   {menuType === 'texte' && (
-                    <div className="space-y-4">
+                    <div className="space-y-6">
                       <p className="text-sm text-gray-600">
-                        Saisissez le menu pour chaque jour de la semaine :
+                        Saisissez le menu pour chaque jour de la semaine (naviguez avec TAB) :
                       </p>
- 
+
                       {['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi'].map((jour) => (
-                        <div key={jour}>
-                          <label
-                            htmlFor={jour}
-                            className="block text-sm font-medium text-gray-700 mb-2 capitalize"
-                          >
-                            {jour}
-                          </label>
-                          <textarea
-                            id={jour}
-                            value={menuTexte[jour]}
-                            onChange={(e) => handleMenuTexteChange(jour, e.target.value)}
-                            rows={3}
-                            className="input-field"
-                            placeholder="Exemple : Entrée, Plat, Accompagnement, Dessert"
-                          />
+                        <div key={jour} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                          <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-lg font-semibold text-gray-900 capitalize">
+                              {jour}
+                            </h3>
+                            <button
+                              type="button"
+                              onClick={() => resetJour(jour)}
+                              className="text-xs text-red-600 hover:text-red-700 font-medium"
+                              title="Vider tous les champs"
+                            >
+                              Réinitialiser
+                            </button>
+                          </div>
+
+                          <div className="grid gap-3">
+                            {/* Entrée */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Entrée
+                              </label>
+                              <input
+                                type="text"
+                                value={menuTexte[jour].entree}
+                                onChange={(e) => handleMenuFieldChange(jour, 'entree', e.target.value)}
+                                className="input-field"
+                                placeholder="Ex: Salade verte, Carottes râpées..."
+                              />
+                            </div>
+
+                            {/* Plat */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Plat
+                              </label>
+                              <input
+                                type="text"
+                                value={menuTexte[jour].plat}
+                                onChange={(e) => handleMenuFieldChange(jour, 'plat', e.target.value)}
+                                className="input-field"
+                                placeholder="Ex: Poulet rôti, Pâtes bolognaise..."
+                              />
+                            </div>
+
+                            {/* Dessert */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Dessert
+                              </label>
+                              <input
+                                type="text"
+                                value={menuTexte[jour].dessert}
+                                onChange={(e) => handleMenuFieldChange(jour, 'dessert', e.target.value)}
+                                className="input-field"
+                                placeholder="Ex: Fruit, Yaourt, Compote..."
+                              />
+                            </div>
+
+                            {/* Allergènes */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Allergènes
+                              </label>
+                              <input
+                                type="text"
+                                value={menuTexte[jour].allergenes}
+                                onChange={(e) => handleMenuFieldChange(jour, 'allergenes', e.target.value)}
+                                className="input-field"
+                                placeholder="Ex: Gluten, Lactose, Fruits à coque..."
+                              />
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
                   )}
- 
+
                   {/* Bouton de publication */}
                   <button type="submit" disabled={loading} className="btn-primary w-full">
                     {loading ? (
@@ -456,14 +553,14 @@ const AdminDashboard = () => {
                 </form>
               </div>
             </div>
- 
+
             {/* Historique des menus */}
             <div className="lg:col-span-1">
               <div className="card">
                 <h3 className="text-xl font-bold text-gray-900 mb-4">
                   Historique des menus
                 </h3>
- 
+
                 {loadingHistorique ? (
                   <div className="text-center py-8">
                     <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto"></div>
@@ -521,7 +618,7 @@ const AdminDashboard = () => {
                   </div>
                 )}
               </div>
- 
+
               {/* Lien vers la page publique */}
               <div className="card mt-4 bg-primary-50 border border-primary-200">
                 <h4 className="font-medium text-primary-900 mb-2">
@@ -540,10 +637,10 @@ const AdminDashboard = () => {
           </div>
         </div>
       </main>
- 
+
       <Footer />
     </div>
   )
 }
- 
+
 export default AdminDashboard
